@@ -44,7 +44,6 @@ class MainActivity : ComponentActivity() {
                             showTradeSdk.value = false
                         }
                     }
-//                    TradeSdk.closeSdk()
                 }
             }
         }
