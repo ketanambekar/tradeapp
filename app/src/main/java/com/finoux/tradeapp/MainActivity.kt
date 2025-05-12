@@ -32,22 +32,19 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .padding(WindowInsets.systemBars.asPaddingValues())
                 ) {
-                    // HomeScreen that triggers opening of Stock Details when clicked
+
                     HomeScreen(
                         onStockClick = { isin ->
-                            Log.d("MainActivity", "showTradeSdk.value: ${showTradeSdk.value}")
-                            TradeSdk.openStockDetails(isin)
-                            showTradeSdk.value = true // Trigger showing the SDK's stock detail screen
+                            showTradeSdk.value = true
                         }
                     )
 
-                    // Show TradeSdk when needed
                     if (showTradeSdk.value) {
                         TradeSdk.Host {
-                            // This callback is triggered when SDK is closed
-                            showTradeSdk.value = false // Close the SDK view and return to HomeScreen
+                            showTradeSdk.value = false
                         }
                     }
+//                    TradeSdk.closeSdk()
                 }
             }
         }

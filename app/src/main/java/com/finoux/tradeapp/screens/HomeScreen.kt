@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finoux.tradeapp.ui.theme.Pink80
@@ -74,7 +75,6 @@ fun HomeScreen(onStockClick: (String) -> Unit) {
             MarketStatus()
             Spacer(modifier = Modifier.height(24.dp))
             Section(title = sectionTitles[0], stocks = topGainers, onStockClick = onStockClick)
-
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -153,7 +153,7 @@ fun StockCard(stock: StockItem, onClick: () -> Unit) {
                 modifier = Modifier.weight(1f)
             ) {
                 Text(stock.name, color = white, fontWeight = FontWeight.Bold)
-                Text("ISIN: ${stock.isin}", color = Pink80, fontSize = 12.sp)
+                Text("${stock.isin}", color = Pink80, fontSize = 12.sp)
             }
 
             Column(
@@ -213,7 +213,7 @@ fun MarketOverviewRow() {
         listOf(
             Triple("NIFTY50", "24,907.15", "(+3.75%)"),
             Triple("SENSEX", "82,353.97", "(+3.65%)"),
-            Triple("BANKNIFTY", "55,442.85", "(-3.42%)"),
+            Triple("BANKNIFTY", "55,442.85", "(-2.42%)"),
         ).forEach { (title, value, change) ->
             MarketIndexItem(title, value, change, bgColor, if(change.startsWith("(+")) green else red)
         }
