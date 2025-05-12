@@ -1,6 +1,7 @@
 package com.finoux.tradeapp.ui.screens
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,10 +9,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,8 +38,7 @@ data class StockItem(val name: String, val isin: String, val ltp: String, val ch
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun HomeScreen() {
-    // Stock section titles
+fun HomeScreen(onStockClick: (String) -> Unit) {
     val sectionTitles = listOf("Watchlist")
 
     // Sample stock data
@@ -47,21 +54,15 @@ fun HomeScreen() {
 
     // Scaffold layout with top bar and main content
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "TradeApp",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+        containerColor = Color(0xFF0D161F),
+        topBar =
+            {
+                TradeTopBar(
+                    onMenuClick = { /* Handle menu */ },
+                    onNotificationClick = { /* Handle notification */ }
                 )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
+            },
+
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -69,9 +70,11 @@ fun HomeScreen() {
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
+            MarketOverviewRow()
             MarketStatus()
             Spacer(modifier = Modifier.height(24.dp))
-            Section(title = sectionTitles[0], stocks = topGainers)
+            Section(title = sectionTitles[0], stocks = topGainers, onStockClick = onStockClick)
+
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -79,7 +82,7 @@ fun HomeScreen() {
 
 // Section composable to display stock lists
 @Composable
-fun Section(title: String, stocks: List<StockItem>) {
+fun Section(title: String, stocks: List<StockItem>, onStockClick: (String) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -94,14 +97,14 @@ fun Section(title: String, stocks: List<StockItem>) {
     Spacer(modifier = Modifier.height(8.dp))
     LazyColumn {
         items(stocks) { stock ->
-            StockCard(stock)
+            StockCard(stock, onClick = { onStockClick(stock.isin) })
         }
     }
 }
 
 // StockCard composable to display individual stock item
 @Composable
-fun StockCard(stock: StockItem) {
+fun StockCard(stock: StockItem, onClick: () -> Unit) {
     val changeColor = if (stock.change.startsWith("+")) green else red
 
     Column(
@@ -113,21 +116,46 @@ fun StockCard(stock: StockItem) {
                 shape = MaterialTheme.shapes.medium
             )
             .clickable {
-                // Open stock details using TradeSdk
-                TradeSdk.openStockDetails(stock.isin)
+                onClick()
+                try {
+                    Log.d("TradeSdk", "Opening stock details for ISIN: ${stock.isin}")
+                    TradeSdk.openStockDetails(stock.isin)
+                } catch (e: Exception) {
+                    Log.e("TradeSdk", "Error opening stock details: ${e.message}")
+                }
             }
             .padding(12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // Stock icon/avatar
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.DarkGray),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stock.name.first().uppercase(),
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+
+            Spacer(modifier = Modifier.width(12.dp))
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(stock.name, color = white, fontWeight = FontWeight.Bold)
                 Text("ISIN: ${stock.isin}", color = Pink80, fontSize = 12.sp)
             }
+
             Column(
                 horizontalAlignment = Alignment.End
             ) {
@@ -170,4 +198,100 @@ fun MarketStatus() {
             color = MaterialTheme.colorScheme.onBackground
         )
     }
+}
+@Composable
+fun MarketOverviewRow() {
+    val bgColor = MaterialTheme.colorScheme.surfaceVariant
+    val positiveColor = Color(0xFF4CAF50) // Green for positive change
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        listOf(
+            Triple("NIFTY50", "24,907.15", "(+3.75%)"),
+            Triple("SENSEX", "82,353.97", "(+3.65%)"),
+            Triple("BANKNIFTY", "55,442.85", "(-3.42%)"),
+        ).forEach { (title, value, change) ->
+            MarketIndexItem(title, value, change, bgColor, if(change.startsWith("(+")) green else red)
+        }
+    }
+
+}
+
+@Composable
+fun MarketIndexItem(
+    title: String,
+    value: String,
+    change: String,
+    bgColor: Color,
+    changeColor: Color
+) {
+    Column(
+        modifier = Modifier
+            .background(bgColor, shape = RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 12.dp)
+            .widthIn(min = 80.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            color = Color.White,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value,
+            fontSize = 15.sp,
+            color = Color.White
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = change,
+            fontSize = 12.sp,
+            color = changeColor,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TradeTopBar(
+    onMenuClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {}
+) {
+    TopAppBar(
+        title = {
+            Text(
+                "TradeApp",
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onMenuClick) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Menu",
+                    tint = Color.White
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onNotificationClick) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notifications",
+                    tint = Color.White
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color(0xFF0D161F)
+        )
+    )
 }
