@@ -56,7 +56,7 @@ android {
 
 dependencies {
     // External SDK
-    implementation("com.github.ketanambekar:tradesdk:1.0.23")
+    implementation("com.github.ketanambekar:tradesdk:1.0.25")
 
     // AndroidX & Compose
     implementation(libs.androidx.core.ktx)
